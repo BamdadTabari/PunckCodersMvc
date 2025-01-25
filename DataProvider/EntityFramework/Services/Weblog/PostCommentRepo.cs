@@ -3,14 +3,14 @@ using DataProvider.EntityFramework.Configs;
 using DataProvider.EntityFramework.Entities.Blog;
 using DataProvider.EntityFramework.Extensions.Blog;
 using DataProvider.EntityFramework.Repository;
+using DataProvider.Models.Query.Blog.PostComment;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace DataProvider.EntityFramework.Services.Weblog;
 public interface IPostCommentRepo : IRepository<PostComment>
 {
     Task<PostComment> GetByIdAsync(int id);
-    PaginatedList<PostComment> GetPaginated(DefaultPaginationFilter filter);
+    PaginatedList<PostComment> GetPaginated(GetPagedPostCommentQuery filter);
     Task<List<PostComment>> GetAll();
 }
 
@@ -18,9 +18,9 @@ public class PostCommentRepo : Repository<PostComment>, IPostCommentRepo
 {
     private readonly IQueryable<PostComment> _queryable;
 
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
 
-    public PostCommentRepo(AppDbContext context, ILogger logger) : base(context)
+    public PostCommentRepo(AppDbContext context, Serilog.ILogger logger) : base(context)
     {
         _queryable = DbContext.Set<PostComment>();
         _logger = logger;
@@ -53,7 +53,7 @@ public class PostCommentRepo : Repository<PostComment>, IPostCommentRepo
         }
     }
 
-    public PaginatedList<PostComment> GetPaginated(DefaultPaginationFilter filter)
+    public PaginatedList<PostComment> GetPaginated(GetPagedPostCommentQuery filter)
     {
         try
         {

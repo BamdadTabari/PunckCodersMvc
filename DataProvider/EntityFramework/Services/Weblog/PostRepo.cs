@@ -26,9 +26,9 @@ public class PostRepo : Repository<Post>, IPostRepo
 {
     private readonly IQueryable<Post> _queryable;
 
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
 
-    public PostRepo(AppDbContext context, ILogger logger) : base(context)
+    public PostRepo(AppDbContext context, Serilog.ILogger logger) : base(context)
     {
         _queryable = DbContext.Set<Post>();
         _logger = logger;

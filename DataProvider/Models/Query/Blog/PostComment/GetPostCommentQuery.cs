@@ -1,10 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel;
 
 namespace DataProvider.Models.Query.Blog.PostComment;
 public class GetPostCommentQuery
 {
+    [DisplayName("PostCommentId")]
+    [Required(ErrorMessage = "{0} is required")]
+    public int PostCommentId { get; set; }
 }
