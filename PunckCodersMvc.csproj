@@ -17,4 +17,8 @@
     <PackageReference Include="tusdotnet" Version="2.8.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DataProvider\DataProvider.csproj" />
+  </ItemGroup>
+
 </Project>
