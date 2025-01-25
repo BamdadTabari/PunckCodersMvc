@@ -1,12 +1,10 @@
 ﻿using DataProvider.Assistant.Pagination;
 using DataProvider.EntityFramework.Configs;
-using DataProvider.EntityFramework.Entities.Blog;
 using DataProvider.EntityFramework.Entities.Identity;
 using DataProvider.EntityFramework.Extensions.Identity;
 using DataProvider.EntityFramework.Repository;
 using DataProvider.Models.Query.Identity.Role;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace DataProvider.EntityFramework.Services.Identity;
 public interface IRoleRepo : IRepository<Role>
@@ -51,7 +49,7 @@ public class RoleRepo : Repository<Role>, IRoleRepo
         }
         catch
         {
-            _logger.Error("Error in GetPaginatedPost");
+            _logger.Error("Error in GetPaginatedRole");
             return new PaginatedList<Role>([], 0, filter.Page, filter.PageSize);
         }
     }

@@ -8,4 +8,3 @@ public class BaseEntity : IBaseEntity
     public DateTime UpdatedAt { get; set; }
     public bool IsDeleted { get; set; }
 }
-    

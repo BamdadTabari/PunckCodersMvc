@@ -1,6 +1,9 @@
-﻿using DataProvider.EntityFramework.Configs;
+﻿using DataProvider.Assistant.Pagination;
+using DataProvider.EntityFramework.Configs;
 using DataProvider.EntityFramework.Entities.Identity;
+using DataProvider.EntityFramework.Extensions.Identity;
 using DataProvider.EntityFramework.Repository;
+using DataProvider.Models.Query.Identity.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataProvider.EntityFramework.Services.Identity;
@@ -10,7 +13,7 @@ public interface IUserRepo : IRepository<User>
     Task<User?> GetUser(int Id);
     Task<bool> AnyExistUserName(string username);
     Task<bool> AnyExistEmail(string email);
-
+    PaginatedList<User> GetPaginated(GetPagedUserQuery filter);
 }
 public class UserRepo : Repository<User>, IUserRepo
 {
@@ -57,6 +60,21 @@ public class UserRepo : Repository<User>, IUserRepo
         {
             _logger.Error("Error in User AnyExistUserName", ex);
             return await Task.FromResult(false);
+        }
+    }
+
+    public PaginatedList<User> GetPaginated(GetPagedUserQuery filter)
+    {
+        try
+        {
+            var query = _queryable.Where(x => x.Id > filter.LastId).AsNoTracking().ApplyFilter(filter).ApplySort(filter.SortBy);
+            var dataTotalCount = _queryable.Count();
+            return new PaginatedList<User>([.. query], dataTotalCount, filter.Page, filter.PageSize);
+        }
+        catch
+        {
+            _logger.Error("Error in GetPaginatedUser");
+            return new PaginatedList<User>([], 0, filter.Page, filter.PageSize);
         }
     }
 

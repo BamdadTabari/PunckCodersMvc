@@ -57,7 +57,7 @@ public class PostCommentRepo : Repository<PostComment>, IPostCommentRepo
     {
         try
         {
-            var query = _queryable.Where(x=>x.Id == filter.LastId).AsNoTracking().ApplyFilter(filter).ApplySort(filter.SortBy);
+            var query = _queryable.Where(x => x.Id == filter.LastId).AsNoTracking().ApplyFilter(filter).ApplySort(filter.SortBy);
             var dataTotalCount = _queryable.Count();
             return new PaginatedList<PostComment>([.. query], dataTotalCount, filter.Page, filter.PageSize);
         }

@@ -32,7 +32,7 @@ public class UnitOfWork : IUnitOfWork
     public IUserRepo UserRepo { get; }
     public IRoleRepo RoleRepo { get; }
     public IUserRoleRepo UserRoleRepo { get; }
-    public ITokenBlacklistRepository TokenBlacklistRepo{ get; }
+    public ITokenBlacklistRepository TokenBlacklistRepo { get; }
     #endregion
 
     #region Email

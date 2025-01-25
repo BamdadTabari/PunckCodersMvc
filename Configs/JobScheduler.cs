@@ -1,7 +1,5 @@
-﻿using System.Threading.Tasks;
-using DataProvider.EntityFramework.Repository;
+﻿using DataProvider.EntityFramework.Repository;
 using Hangfire;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace PunckCodersMvc.Configs;
 public class JobScheduler

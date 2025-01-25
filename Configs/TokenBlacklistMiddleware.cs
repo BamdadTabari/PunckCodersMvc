@@ -1,7 +1,4 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
-using DataProvider.EntityFramework.Repository;
+﻿using DataProvider.EntityFramework.Repository;
 
 namespace PunckCodersMvc.Configs;
 public class TokenBlacklistMiddleware

@@ -37,11 +37,11 @@ public class TokenBlacklistRepo : Repository<BlacklistedToken>, ITokenBlacklistR
 
     public async Task<List<BlacklistedToken>?> GetExpiredTokensAsync()
     {
-        
+
         try
         {
             return await _queryable.Where(t => t.ExpiryDate <= DateTime.UtcNow).ToListAsync();
-            
+
         }
         catch (Exception ex)
         {
