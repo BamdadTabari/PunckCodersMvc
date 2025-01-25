@@ -2,12 +2,6 @@
 using DataProvider.EntityFramework.Entities.Identity;
 using DataProvider.EntityFramework.Repository;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataProvider.EntityFramework.Services.Identity;
 public interface ITokenBlacklistRepository : IRepository<BlacklistedToken>
@@ -20,9 +14,9 @@ public class TokenBlacklistRepo : Repository<BlacklistedToken>, ITokenBlacklistR
 {
     private readonly IQueryable<BlacklistedToken> _queryable;
 
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
 
-    public TokenBlacklistRepo(AppDbContext context, ILogger logger) : base(context)
+    public TokenBlacklistRepo(AppDbContext context, Serilog.ILogger logger) : base(context)
     {
         _queryable = DbContext.Set<BlacklistedToken>();
         _logger = logger;

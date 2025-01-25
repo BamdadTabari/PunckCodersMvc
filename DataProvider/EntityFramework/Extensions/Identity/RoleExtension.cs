@@ -1,15 +1,21 @@
 ﻿using DataProvider.Assistant.Pagination;
 using DataProvider.EntityFramework.Entities.Blog;
-using DataProvider.Models.Query.Blog.PostComment;
+using DataProvider.EntityFramework.Entities.Identity;
+using DataProvider.Models.Query.Identity.Role;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace DataProvider.EntityFramework.Extensions.Blog;
-public static class PostCommentExtension
+namespace DataProvider.EntityFramework.Extensions.Identity;
+public static class RoleExtension
 {
-    public static IQueryable<PostComment> ApplyFilter(this IQueryable<PostComment> query, GetPagedPostCommentQuery filter)
+    public static IQueryable<Role> ApplyFilter(this IQueryable<Role> query, GetPagedRoleQuery filter)
     {
 
         if (!string.IsNullOrEmpty(filter.Keyword))
-            query = query.Where(x => x.Text.ToLower().Contains(filter.Keyword.ToLower().Trim()));
+            query = query.Where(x => x.Title.ToLower().Contains(filter.Keyword.ToLower().Trim()));
 
         if (filter.IsDeleted.HasValue)
             query = query.Where(x => x.IsDeleted == filter.IsDeleted.Value);
@@ -18,7 +24,7 @@ public static class PostCommentExtension
     }
 
 
-    public static IQueryable<PostComment> ApplySort(this IQueryable<PostComment> query, SortByEnum? sortBy)
+    public static IQueryable<Role> ApplySort(this IQueryable<Role> query, SortByEnum? sortBy)
     {
         return sortBy switch
         {

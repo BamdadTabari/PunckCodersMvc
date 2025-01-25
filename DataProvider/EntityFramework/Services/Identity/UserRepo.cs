@@ -2,7 +2,6 @@
 using DataProvider.EntityFramework.Entities.Identity;
 using DataProvider.EntityFramework.Repository;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 
 namespace DataProvider.EntityFramework.Services.Identity;
 public interface IUserRepo : IRepository<User>
@@ -11,14 +10,15 @@ public interface IUserRepo : IRepository<User>
     Task<User?> GetUser(int Id);
     Task<bool> AnyExistUserName(string username);
     Task<bool> AnyExistEmail(string email);
+
 }
 public class UserRepo : Repository<User>, IUserRepo
 {
     private readonly IQueryable<User> _queryable;
 
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
 
-    public UserRepo(AppDbContext context, ILogger logger) : base(context)
+    public UserRepo(AppDbContext context, Serilog.ILogger logger) : base(context)
     {
         _queryable = DbContext.Set<User>();
         _logger = logger;

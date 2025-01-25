@@ -1,6 +1,10 @@
-﻿using DataProvider.EntityFramework.Configs;
+﻿using DataProvider.Assistant.Pagination;
+using DataProvider.EntityFramework.Configs;
+using DataProvider.EntityFramework.Entities.Blog;
 using DataProvider.EntityFramework.Entities.Identity;
+using DataProvider.EntityFramework.Extensions.Identity;
 using DataProvider.EntityFramework.Repository;
+using DataProvider.Models.Query.Identity.Role;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -10,14 +14,15 @@ public interface IRoleRepo : IRepository<Role>
     Task<Role> GetRole(string title);
     Task<Role> GetRole(int id);
     Task<bool> AnyExist(string title);
+    PaginatedList<Role> GetPaginated(GetPagedRoleQuery filter);
 }
 public class RoleRepo : Repository<Role>, IRoleRepo
 {
     private readonly IQueryable<Role> _queryable;
 
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
 
-    public RoleRepo(AppDbContext context, ILogger logger) : base(context)
+    public RoleRepo(AppDbContext context, Serilog.ILogger logger) : base(context)
     {
         _queryable = DbContext.Set<Role>();
         _logger = logger;
@@ -33,6 +38,21 @@ public class RoleRepo : Repository<Role>, IRoleRepo
         {
             _logger.Error("Error in User AnyAsync", ex);
             return await Task.FromResult(false);
+        }
+    }
+
+    public PaginatedList<Role> GetPaginated(GetPagedRoleQuery filter)
+    {
+        try
+        {
+            var query = _queryable.Where(x => x.Id > filter.LastId).AsNoTracking().ApplyFilter(filter).ApplySort(filter.SortBy);
+            var dataTotalCount = _queryable.Count();
+            return new PaginatedList<Role>([.. query], dataTotalCount, filter.Page, filter.PageSize);
+        }
+        catch
+        {
+            _logger.Error("Error in GetPaginatedPost");
+            return new PaginatedList<Role>([], 0, filter.Page, filter.PageSize);
         }
     }
 
