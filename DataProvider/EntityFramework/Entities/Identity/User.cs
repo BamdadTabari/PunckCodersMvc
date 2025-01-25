@@ -88,8 +88,7 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<User>
         #region Conversions
 
         builder.Property(x => x.State)
-            .HasConversion(new EnumToStringConverter<UserStateEnum>())
-            .HasMaxLength(UserStateEnum.Active.GetMaxLength());
+            .HasConversion(new EnumToStringConverter<UserStateEnum>());
 
         #endregion
 

@@ -22,7 +22,7 @@ public interface IUnitOfWork : IDisposable
 public class UnitOfWork : IUnitOfWork
 {
     private readonly AppDbContext _context;
-    private readonly ILogger _logger;
+    private readonly Serilog.ILogger _logger;
     #region Blog
     public IPostRepo PostRepo { get; }
     public IPostCommentRepo PostCommentRepo { get; }
