@@ -16,6 +16,8 @@ public class Post : BaseEntity
     // navigation
     public int AuthorId { get; set; }
     public User Author { get; set; }
+    public int PostCategoryId { get; set; }
+    public PostCategory PostCategory { get; set; }
     public ICollection<PostComment>? PostComments { get; set; }
 }
 
