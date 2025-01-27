@@ -11,7 +11,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 
 namespace PunckCodersMvc.Controllers.Admin;
-public class PostController : ControllerBase
+public class PostController : Controller
 {
     private readonly IMemoryCache _memoryCache;
     private readonly CacheOptions _cacheOptions;
@@ -102,7 +102,7 @@ public class PostController : ControllerBase
             {
                 try
                 {
-                    _memoryCache.Set(lockKey, true, TimeSpan.FromSeconds(30));
+                    _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
 
                     result = await _unitOfWork.PostRepo.GetByIdAsync(getPostQuery.PostId);
 

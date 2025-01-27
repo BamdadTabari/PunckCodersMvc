@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace PunckCodersMvc.Controllers.Identity;
-public class AuthenticationController : ControllerBase
+public class AuthenticationController : Controller
 {
     private readonly JwtTokenService _tokenService;
     private readonly IUnitOfWork _unitOfWork;

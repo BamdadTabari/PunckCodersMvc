@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using PunckCodersMvc.Configs;
 
 namespace PunckCodersMvc.Controllers.Blog;
-public class WeblogController : ControllerBase
+public class WeblogController : Controller
 {
     private readonly IMemoryCache _memoryCache;
     private readonly CacheOptions _cacheOptions;
@@ -27,7 +27,56 @@ public class WeblogController : ControllerBase
 
     [HttpGet]
     [Route("get-by-id")]
-    public async Task<IActionResult> Get([FromQuery] GetPostQuery getPostQuery)
+    public async Task<IActionResult> GetPostCategory([FromQuery] GetPostCategoryQuery getPostCategoryQuery)
+    {
+        string cacheKey = $"{CacheKey}_{getPostCategoryQuery.PostCategoryId}";
+        string lockKey = $"{CacheLockKey}_{getPostCategoryQuery.PostCategoryId}";
+
+        if (!_memoryCache.TryGetValue(cacheKey, out PostCategory? result))
+        {
+            // Lock mechanism to prevent cache stampede
+            if (!_memoryCache.TryGetValue(lockKey, out _))
+            {
+                try
+                {
+                    _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
+
+                    result = await _unitOfWork.PostCategoryRepo.GetByIdAsync(getPostCategoryQuery.PostCategoryId);
+
+                    if (result == null) return NotFound("Post Category not found.");
+
+                    _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = _cacheOptions.AbsoluteExpiration,
+                        SlidingExpiration = _cacheOptions.SlidingExpiration
+                    });
+                }
+                finally
+                {
+                    _memoryCache.Remove(lockKey);
+                }
+            }
+            else
+            {
+                // Wait and retry if lock is active
+                await Task.Delay(100);
+                return await GetPostCategory(getPostCategoryQuery);
+            }
+        }
+        return Ok(result);
+    }
+
+    [HttpGet]
+    [Route("get-by-filter")]
+    public IActionResult GetPaginatedPostCategory([FromQuery] GetPagedPostCategoryQuery getPagedPostCategoryQuery)
+    {
+        var result = _unitOfWork.PostCategoryRepo.GetPaginated(getPagedPostCategoryQuery);
+        return Ok(result);
+    }
+
+    [HttpGet]
+    [Route("get-by-id")]
+    public async Task<IActionResult> GetPost([FromQuery] GetPostQuery getPostQuery)
     {
         string cacheKey = $"{CacheKey}_{getPostQuery.PostId}";
         string lockKey = $"{CacheLockKey}_{getPostQuery.PostId}";
@@ -39,7 +88,7 @@ public class WeblogController : ControllerBase
             {
                 try
                 {
-                    _memoryCache.Set(lockKey, true, TimeSpan.FromSeconds(30));
+                    _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
 
                     result = await _unitOfWork.PostRepo.GetByIdAsync(getPostQuery.PostId);
 
@@ -60,7 +109,7 @@ public class WeblogController : ControllerBase
             {
                 // Wait and retry if lock is active
                 await Task.Delay(100);
-                return await Get(getPostQuery);
+                return await GetPost(getPostQuery);
             }
         }
 
@@ -74,7 +123,7 @@ public class WeblogController : ControllerBase
 
     [HttpGet]
     [Route("get-by-filter")]
-    public IActionResult GetPaginated([FromQuery] GetPagedPostQuery getPagedPostQuery)
+    public IActionResult GetPaginatedPost([FromQuery] GetPagedPostQuery getPagedPostQuery)
     {
         var result = _unitOfWork.PostRepo.GetPaginated(getPagedPostQuery);
         return Ok(result);

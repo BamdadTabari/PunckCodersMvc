@@ -10,7 +10,7 @@ using PunckCodersMvc.Configs;
 namespace PunkCodersMvc.Controllers.Admin;
 
 [ApiController]
-public class PostCategoryController : ControllerBase
+public class PostCategoryController : Controller
 {
     private readonly IMemoryCache _memoryCache;
     private readonly CacheOptions _cacheOptions;
@@ -108,7 +108,7 @@ public class PostCategoryController : ControllerBase
             {
                 try
                 {
-                    _memoryCache.Set(lockKey, true, TimeSpan.FromSeconds(30));
+                    _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
 
                     result = await _unitOfWork.PostCategoryRepo.GetByIdAsync(getPostCategoryQuery.PostCategoryId);
 
