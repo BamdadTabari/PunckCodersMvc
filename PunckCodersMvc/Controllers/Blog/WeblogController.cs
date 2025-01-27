@@ -15,6 +15,7 @@ public class WeblogController : ControllerBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger _logger;
     private const string CacheKey = "weblog";
+    private const string CacheLockKey = "weblog_lock";
 
     public WeblogController(IMemoryCache memoryCache, IOptions<CacheOptions> cacheOptions, IUnitOfWork unitOfWork, ILogger logger)
     {
@@ -29,27 +30,45 @@ public class WeblogController : ControllerBase
     public async Task<IActionResult> Get([FromQuery] GetPostQuery getPostQuery)
     {
         string cacheKey = $"{CacheKey}_{getPostQuery.PostId}";
+        string lockKey = $"{CacheLockKey}_{getPostQuery.PostId}";
 
         if (!_memoryCache.TryGetValue(cacheKey, out Post? result))
         {
-            result = await _unitOfWork.PostRepo.GetByIdAsync(getPostQuery.PostId);
-
-            if (result == null) return NotFound("Post not found.");
-
-            _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
+            // Lock mechanism to prevent cache stampede
+            if (!_memoryCache.TryGetValue(lockKey, out _))
             {
-                AbsoluteExpirationRelativeToNow = _cacheOptions.AbsoluteExpiration,
-                SlidingExpiration = _cacheOptions.SlidingExpiration
-            });
+                try
+                {
+                    _memoryCache.Set(lockKey, true, TimeSpan.FromSeconds(30));
 
-            CacheManager.AddKey(cacheKey);
+                    result = await _unitOfWork.PostRepo.GetByIdAsync(getPostQuery.PostId);
 
-            result.ViewCount += 1;
-            _unitOfWork.PostRepo.Update(result);
+                    if (result == null) return NotFound("Post not found.");
+
+                    _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = _cacheOptions.AbsoluteExpiration,
+                        SlidingExpiration = _cacheOptions.SlidingExpiration
+                    });
+                }
+                finally
+                {
+                    _memoryCache.Remove(lockKey);
+                }
+            }
+            else
+            {
+                // Wait and retry if lock is active
+                await Task.Delay(100);
+                return await Get(getPostQuery);
+            }
         }
+
+        // Increment view count and update database
         result.ViewCount += 1;
         _unitOfWork.PostRepo.Update(result);
         await _unitOfWork.CommitAsync();
+
         return Ok(result);
     }
 
@@ -57,31 +76,7 @@ public class WeblogController : ControllerBase
     [Route("get-by-filter")]
     public IActionResult GetPaginated([FromQuery] GetPagedPostQuery getPagedPostQuery)
     {
-        string cacheKey = $"{CacheKey}_Filter_Pagination";
-
-        if (!_memoryCache.TryGetValue(cacheKey, out PaginatedList<Post>? result))
-        {
-            result = _unitOfWork.PostRepo.GetPaginated(getPagedPostQuery);
-
-            _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = _cacheOptions.AbsoluteExpiration,
-                SlidingExpiration = _cacheOptions.SlidingExpiration
-            });
-
-            CacheManager.AddKey(cacheKey);
-        }
-
+        var result = _unitOfWork.PostRepo.GetPaginated(getPagedPostQuery);
         return Ok(result);
     }
-
-    [HttpDelete]
-    [Route("clear-all-cache")]
-    public IActionResult ClearAllCache()
-    {
-        CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
-        _logger.LogInformation("All cache for posts has been cleared At {Time}", DateTime.UtcNow);
-        return Ok("All cache for posts has been cleared.");
-    }
-
 }
