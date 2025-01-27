@@ -8,7 +8,7 @@ public interface IUnitOfWork : IDisposable
 {
     IPostRepo PostRepo { get; }
     IPostCommentRepo PostCommentRepo { get; }
-
+    IPostCategoryRepo PostCategoryRepo { get; } // PostCategoryRepo
     IUserRepo UserRepo { get; }
     IRoleRepo RoleRepo { get; }
     IUserRoleRepo UserRoleRepo { get; }
@@ -26,6 +26,8 @@ public class UnitOfWork : IUnitOfWork
     #region Blog
     public IPostRepo PostRepo { get; }
     public IPostCommentRepo PostCommentRepo { get; }
+    public IPostCategoryRepo PostCategoryRepo { get; }
+
     #endregion
 
     #region Identity
@@ -57,6 +59,7 @@ public class UnitOfWork : IUnitOfWork
         #region Blog
         PostRepo = new PostRepo(_context, _logger);
         PostCommentRepo = new PostCommentRepo(_context, _logger);
+        PostCategoryRepo = new PostCategoryRepo(_context, _logger);
         #endregion
 
         #region Identity

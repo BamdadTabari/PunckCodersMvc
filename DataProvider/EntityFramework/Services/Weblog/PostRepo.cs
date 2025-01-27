@@ -69,7 +69,7 @@ public class PostRepo : Repository<Post>, IPostRepo
     {
         try
         {
-            var query = _queryable.Include(x => x.PostComments).Where(x => x.Id > filter.LastId).AsNoTracking().ApplyFilter(filter).ApplySort(filter.SortBy);
+            var query = _queryable.Include(x => x.PostComments).Where(x => x.Id > filter.LastId).Take(filter.PageSize).AsNoTracking().ApplyFilter(filter).ApplySort(filter.SortBy);
             var dataTotalCount = _queryable.Count();
             return new PaginatedList<Post>([.. query], dataTotalCount, filter.Page, filter.PageSize);
         }
