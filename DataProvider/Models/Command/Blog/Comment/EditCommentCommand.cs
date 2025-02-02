@@ -8,4 +8,5 @@ public class EditCommentCommand
     [Required(ErrorMessage = "{0} is required")]
     public string Text { get; set; }
     public int PostId { get; set; }
+    public int CommentId { get; set; }
 }
