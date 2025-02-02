@@ -48,6 +48,7 @@ public class User : BaseEntity
     #region Navigations
     public ICollection<UserRole> UserRoles { get; set; }
     public ICollection<Post> Posts { get; set; }
+    public ICollection<PostLike> PostLikes { get; set; }
     #endregion
 }
 
