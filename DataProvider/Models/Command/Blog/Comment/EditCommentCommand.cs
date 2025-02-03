@@ -7,7 +7,6 @@ public class EditCommentCommand
     [DisplayName("Comment Text")]
     [Required(ErrorMessage = "{0} is required")]
     public string Text { get; set; }
-    [DisplayName("Comment Id")]
-    [Required(ErrorMessage = "{0} is required")]
+    public int PostId { get; set; }
     public int CommentId { get; set; }
 }

@@ -3,6 +3,7 @@ using DataProvider.EntityFramework.Repository;
 using DataProvider.Models.Command.Blog.Comment;
 using DataProvider.Models.Command.Blog.PostCategory;
 using DataProvider.Models.Query.Blog.PostCategory;
+using DataProvider.Models.Query.Blog.PostComment;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -33,13 +34,12 @@ public class CommentController : Controller
     {
         try
         {
-            var user = await _unitOfWork.UserRepo.GetUser(User.Identity.Name ?? string.Empty);
             var entity = new PostComment
             {
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 IsDeleted = false,
-                AuthorName = user!.Username ?? "Anonymous",
+                AuthorName = User.Identity.Name,
                 PostId = createCommentCommand.PostId,
                 Text = createCommentCommand.Text
             };
@@ -53,54 +53,51 @@ public class CommentController : Controller
                 CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
             }
 
-            return Ok("Post comment created successfully.");
+            return Ok("Comment created successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on create post comment at {Time}", DateTime.UtcNow);
-            return BadRequest("Error On Create Post Comment");
+            _logger.LogError(ex, "Error on create comment at {Time}", DateTime.UtcNow);
+            return BadRequest("Error On Create Comment");
         }
     }
 
     [HttpPut]
     [Route("edit")]
-    public async Task<IActionResult> Edit([FromForm] EditPostCategoryCommand editPostCategoryCommand)
+    public async Task<IActionResult> Edit([FromForm] EditCommentCommand editCommentCommand)
     {
         try
         {
-            if (await _unitOfWork.PostCategoryRepo.AnyAsync(editPostCategoryCommand.Name))
-                return BadRequest("PostCategory already exists");
-
-            var entity = await _unitOfWork.PostCategoryRepo.GetByIdAsync(editPostCategoryCommand.PostCategoryId);
+            var entity = await _unitOfWork.PostCommentRepo.GetByIdAsync(editCommentCommand.CommentId);
             entity.UpdatedAt = DateTime.Now;
-            entity.Name = editPostCategoryCommand.Name;
+            entity.Text = editCommentCommand.Text;
 
-            _unitOfWork.PostCategoryRepo.Update(entity);
+            _unitOfWork.PostCommentRepo.Update(entity);
             if (!await _unitOfWork.CommitAsync())
-                return BadRequest("Error occurred while updating the category.");
+                return BadRequest("Error occurred while updating the comment.");
 
             lock (_cacheLock)
             {
                 CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
             }
 
-            return Ok("Post category updated successfully.");
+            return Ok("Comment updated successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on edit post category at {Time}", DateTime.UtcNow);
+            _logger.LogError(ex, "Error on edit comment at {Time}", DateTime.UtcNow);
             return BadRequest(ex.Message);
         }
     }
 
     [HttpGet]
     [Route("get-by-id")]
-    public async Task<IActionResult> Get([FromQuery] GetPostCategoryQuery getPostCategoryQuery)
+    public async Task<IActionResult> Get([FromQuery] GetPostCommentQuery getPotCommentQuery)
     {
-        string cacheKey = $"{CacheKey}_{getPostCategoryQuery.PostCategoryId}";
-        string lockKey = $"{CacheLockKey}_{getPostCategoryQuery.PostCategoryId}";
+        string cacheKey = $"{CacheKey}_{getPotCommentQuery.PostCommentId}";
+        string lockKey = $"{CacheLockKey}_{getPotCommentQuery.PostCommentId}";
 
-        if (!_memoryCache.TryGetValue(cacheKey, out PostCategory? result))
+        if (!_memoryCache.TryGetValue(cacheKey, out PostComment? result))
         {
             // Lock mechanism to prevent cache stampede
             if (!_memoryCache.TryGetValue(lockKey, out _))
@@ -109,9 +106,9 @@ public class CommentController : Controller
                 {
                     _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
 
-                    result = await _unitOfWork.PostCategoryRepo.GetByIdAsync(getPostCategoryQuery.PostCategoryId);
+                    result = await _unitOfWork.PostCommentRepo.GetByIdAsync(getPotCommentQuery.PostCommentId);
 
-                    if (result == null) return NotFound("Post category not found.");
+                    if (result == null) return NotFound("Post comment not found.");
 
                     _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
                     {
@@ -128,7 +125,7 @@ public class CommentController : Controller
             {
                 // Wait and retry if lock is active
                 await Task.Delay(100);
-                return await Get(getPostCategoryQuery);
+                return await Get(getPotCommentQuery);
             }
         }
 
@@ -137,55 +134,37 @@ public class CommentController : Controller
 
     [HttpGet]
     [Route("get-by-filter")]
-    public IActionResult GetPaginated([FromQuery] GetPagedPostCategoryQuery getPagedPostCategoryQuery)
+    public IActionResult GetPaginated([FromQuery] GetPagedPostCommentQuery getPagedPostCommentQuery)
     {
-        var result = _unitOfWork.PostCategoryRepo.GetPaginated(getPagedPostCategoryQuery);
+        var result = _unitOfWork.PostCommentRepo.GetPaginated(getPagedPostCommentQuery);
         return Ok(result);
     }
 
     [HttpDelete]
     [Route("delete")]
-    public async Task<IActionResult> Delete([FromForm] DeletePostCategoryCommand deletePostCategoryCommand)
+    public async Task<IActionResult> Delete([FromForm] DeleteCommentCommand deleteCommentCommand)
     {
         try
         {
-            var entity = await _unitOfWork.PostCategoryRepo.GetByIdAsync(deletePostCategoryCommand.PostCategoryId);
-            if (entity == null) return NotFound("Post category not found.");
+            var entity = await _unitOfWork.PostCommentRepo.GetByIdAsync(deleteCommentCommand.CommentId);
+            if (entity == null) return NotFound("Post comment not found.");
 
             entity.IsDeleted = true;
-            _unitOfWork.PostCategoryRepo.Update(entity);
-
-            if (entity.Posts != null)
-            {
-                foreach (var post in entity.Posts)
-                {
-                    post.IsDeleted = true;
-                    _unitOfWork.PostRepo.Update(post);
-
-                    if (post.PostComments != null)
-                    {
-                        foreach (var comment in post.PostComments)
-                        {
-                            comment.IsDeleted = true;
-                            _unitOfWork.PostCommentRepo.Update(comment);
-                        }
-                    }
-                }
-            }
+            _unitOfWork.PostCommentRepo.Update(entity);
 
             if (!await _unitOfWork.CommitAsync())
-                return BadRequest("Error occurred while deleting the category.");
+                return BadRequest("Error occurred while deleting the comment.");
 
             lock (_cacheLock)
             {
                 CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
             }
 
-            return Ok("Post category deleted successfully.");
+            return Ok("comment deleted successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on Delete post category at {Time}", DateTime.UtcNow);
+            _logger.LogError(ex, "Error on Delete comment at {Time}", DateTime.UtcNow);
             return BadRequest(ex.Message);
         }
     }

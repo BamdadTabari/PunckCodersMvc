@@ -19,6 +19,7 @@ public class Post : BaseEntity
     public int PostCategoryId { get; set; }
     public PostCategory PostCategory { get; set; }
     public ICollection<PostComment>? PostComments { get; set; }
+    public ICollection<PostLike>? PostLikes { get; set; }
 }
 
 public class PostConfiguration : IEntityTypeConfiguration<Post>
