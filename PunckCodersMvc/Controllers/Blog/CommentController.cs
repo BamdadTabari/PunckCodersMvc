@@ -1,5 +1,6 @@
 ﻿using DataProvider.EntityFramework.Entities.Blog;
 using DataProvider.EntityFramework.Repository;
+using DataProvider.Models.Command.Blog.Comment;
 using DataProvider.Models.Command.Blog.PostCategory;
 using DataProvider.Models.Query.Blog.PostCategory;
 using Microsoft.AspNetCore.Mvc;
@@ -28,36 +29,36 @@ public class CommentController : Controller
 
     [HttpPost]
     [Route("create")]
-    public async Task<IActionResult> Create([FromForm] CreatePostCategoryCommand createPostCategoryCommand)
+    public async Task<IActionResult> Create([FromForm] CreateCommentCommand createCommentCommand)
     {
         try
         {
-            if (await _unitOfWork.PostCategoryRepo.AnyAsync(createPostCategoryCommand.Name))
-                return BadRequest("PostCategory already exists");
-
-            var entity = new PostCategory
+            var user = await _unitOfWork.UserRepo.GetUser(User.Identity.Name ?? string.Empty);
+            var entity = new PostComment
             {
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 IsDeleted = false,
-                Name = createPostCategoryCommand.Name,
+                AuthorName = user!.Username ?? "Anonymous",
+                PostId = createCommentCommand.PostId,
+                Text = createCommentCommand.Text
             };
 
-            await _unitOfWork.PostCategoryRepo.AddAsync(entity);
+            await _unitOfWork.PostCommentRepo.AddAsync(entity);
             if (!await _unitOfWork.CommitAsync())
-                return BadRequest("Error occurred while creating the category.");
+                return BadRequest("Error occurred while creating the comment.");
 
             lock (_cacheLock)
             {
                 CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
             }
 
-            return Ok("Post category created successfully.");
+            return Ok("Post comment created successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on create post category at {Time}", DateTime.UtcNow);
-            return BadRequest("Error On Create PostCategory");
+            _logger.LogError(ex, "Error on create post comment at {Time}", DateTime.UtcNow);
+            return BadRequest("Error On Create Post Comment");
         }
     }
 
