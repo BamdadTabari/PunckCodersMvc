@@ -56,7 +56,7 @@ public class PostRepo : Repository<Post>, IPostRepo
     {
         try
         {
-            return await _queryable.Include(i => i.PostComments).SingleOrDefaultAsync(x => x.Id == id && x.IsDeleted == false) ?? new Post();
+            return await _queryable.Include(i => i.PostComments).Include(i=>i.PostLikes).SingleOrDefaultAsync(x => x.Id == id && x.IsDeleted == false) ?? new Post();
         }
         catch
         {
