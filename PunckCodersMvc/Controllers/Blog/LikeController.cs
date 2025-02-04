@@ -38,7 +38,7 @@ public class LikeController : Controller
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 IsDeleted = false,
-                UserId =( await _unitOfWork.UserRepo.GetUser(User.Identity.Name)).Id,
+                UserId = (await _unitOfWork.UserRepo.GetUser(User.Identity.Name)).Id,
                 PostId = createLikeCommand.PostId,
             };
 
@@ -60,109 +60,31 @@ public class LikeController : Controller
         }
     }
 
-    [HttpPut]
-    [Route("edit")]
-    public async Task<IActionResult> Edit([FromForm] EditCommentCommand editCommentCommand)
-    {
-        try
-        {
-            var entity = await _unitOfWork.PostCommentRepo.GetByIdAsync(editCommentCommand.CommentId);
-            entity.UpdatedAt = DateTime.Now;
-            entity.Text = editCommentCommand.Text;
-
-            _unitOfWork.PostCommentRepo.Update(entity);
-            if (!await _unitOfWork.CommitAsync())
-                return BadRequest("Error occurred while updating the comment.");
-
-            lock (_cacheLock)
-            {
-                CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
-            }
-
-            return Ok("Comment updated successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error on edit comment at {Time}", DateTime.UtcNow);
-            return BadRequest(ex.Message);
-        }
-    }
-
-    [HttpGet]
-    [Route("get-by-id")]
-    public async Task<IActionResult> Get([FromQuery] GetPostCommentQuery getPotCommentQuery)
-    {
-        string cacheKey = $"{CacheKey}_{getPotCommentQuery.PostCommentId}";
-        string lockKey = $"{CacheLockKey}_{getPotCommentQuery.PostCommentId}";
-
-        if (!_memoryCache.TryGetValue(cacheKey, out PostComment? result))
-        {
-            // Lock mechanism to prevent cache stampede
-            if (!_memoryCache.TryGetValue(lockKey, out _))
-            {
-                try
-                {
-                    _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
-
-                    result = await _unitOfWork.PostCommentRepo.GetByIdAsync(getPotCommentQuery.PostCommentId);
-
-                    if (result == null) return NotFound("Post comment not found.");
-
-                    _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = _cacheOptions.AbsoluteExpiration,
-                        SlidingExpiration = _cacheOptions.SlidingExpiration
-                    });
-                }
-                finally
-                {
-                    _memoryCache.Remove(lockKey);
-                }
-            }
-            else
-            {
-                // Wait and retry if lock is active
-                await Task.Delay(100);
-                return await Get(getPotCommentQuery);
-            }
-        }
-
-        return Ok(result);
-    }
-
-    [HttpGet]
-    [Route("get-by-filter")]
-    public IActionResult GetPaginated([FromQuery] GetPagedPostCommentQuery getPagedPostCommentQuery)
-    {
-        var result = _unitOfWork.PostCommentRepo.GetPaginated(getPagedPostCommentQuery);
-        return Ok(result);
-    }
-
     [HttpDelete]
     [Route("delete")]
-    public async Task<IActionResult> Delete([FromForm] DeleteCommentCommand deleteCommentCommand)
+    public async Task<IActionResult> Delete([FromForm] DeleteLikeCommand deleteLikeCommand)
     {
         try
         {
-            var entity = await _unitOfWork.PostCommentRepo.GetByIdAsync(deleteCommentCommand.CommentId);
-            if (entity == null) return NotFound("Post comment not found.");
+            var entity = await _unitOfWork.PostLikeRepo.Get(deleteLikeCommand.UserId, deleteLikeCommand.PostId);
+            if (entity == null) return NotFound("Like comment not found.");
 
             entity.IsDeleted = true;
-            _unitOfWork.PostCommentRepo.Update(entity);
+            _unitOfWork.PostLikeRepo.Update(entity);
 
             if (!await _unitOfWork.CommitAsync())
-                return BadRequest("Error occurred while deleting the comment.");
+                return BadRequest("Error occurred while deleting the Like.");
 
             lock (_cacheLock)
             {
                 CacheManager.ClearKeysByPrefix(_memoryCache, CacheKey);
             }
 
-            return Ok("comment deleted successfully.");
+            return Ok("Like deleted successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error on Delete comment at {Time}", DateTime.UtcNow);
+            _logger.LogError(ex, "Error on Delete Like at {Time}", DateTime.UtcNow);
             return BadRequest(ex.Message);
         }
     }
