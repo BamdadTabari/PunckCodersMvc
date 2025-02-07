@@ -5,7 +5,7 @@ namespace DataProvider.EntityFramework.Entities.Blog;
 public class PostComment : BaseEntity
 {
     public string Text { get; set; }
-    public string? AuthorName { get; set; } = " کاربر ناشناس ";
+    public string? AuthorName { get; set; } = "unknown ";
 
     // navigation
     public int PostId { get; set; }

@@ -29,8 +29,6 @@ public static class UserExtension
         {
             SortByEnum.CreationDate => query.OrderBy(x => x.CreatedAt),
             SortByEnum.CreationDateDescending => query.OrderByDescending(x => x.CreatedAt),
-            SortByEnum.UpdateDate => query.OrderBy(x => x.UpdatedAt),
-            SortByEnum.UpdateDateDescending => query.OrderByDescending(x => x.UpdatedAt),
             _ => query.OrderByDescending(x => x.Id)
         };
     }

@@ -4,6 +4,7 @@ using DataProvider.Models.Command.Blog.Comment;
 using DataProvider.Models.Command.Blog.PostCategory;
 using DataProvider.Models.Query.Blog.PostCategory;
 using DataProvider.Models.Query.Blog.PostComment;
+using DataProvider.Models.Result.Blog.Post;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -37,7 +38,6 @@ public class CommentController : Controller
             var entity = new PostComment
             {
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
                 IsDeleted = false,
                 AuthorName = User.Identity.Name,
                 PostId = createCommentCommand.PostId,
@@ -69,7 +69,6 @@ public class CommentController : Controller
         try
         {
             var entity = await _unitOfWork.PostCommentRepo.GetByIdAsync(editCommentCommand.CommentId);
-            entity.UpdatedAt = DateTime.Now;
             entity.Text = editCommentCommand.Text;
 
             _unitOfWork.PostCommentRepo.Update(entity);
@@ -97,7 +96,7 @@ public class CommentController : Controller
         string cacheKey = $"{CacheKey}_{getPotCommentQuery.PostCommentId}";
         string lockKey = $"{CacheLockKey}_{getPotCommentQuery.PostCommentId}";
 
-        if (!_memoryCache.TryGetValue(cacheKey, out PostComment? result))
+        if (!_memoryCache.TryGetValue(cacheKey, out PostCommentResult? result))
         {
             // Lock mechanism to prevent cache stampede
             if (!_memoryCache.TryGetValue(lockKey, out _))
@@ -105,8 +104,14 @@ public class CommentController : Controller
                 try
                 {
                     _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
-
-                    result = await _unitOfWork.PostCommentRepo.GetByIdAsync(getPotCommentQuery.PostCommentId);
+                    var postcomment = await _unitOfWork.PostCommentRepo.GetByIdAsync(getPotCommentQuery.PostCommentId);
+                    result = new PostCommentResult()
+                    {
+                        AuthorName = postcomment.AuthorName,
+                        CreatedAt = postcomment.CreatedAt,
+                        Id = postcomment.Id,
+                        Text = postcomment.Text
+                    };
 
                     if (result == null) return NotFound("Post comment not found.");
 

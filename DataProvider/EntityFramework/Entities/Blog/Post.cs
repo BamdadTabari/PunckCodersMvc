@@ -12,6 +12,7 @@ public class Post : BaseEntity
     public string Image { get; set; }
     public bool IsPublished { get; set; }
     public int LikeCount { get; set; } = 0;
+    public bool? IsUserLiked { get; set; }
 
     // navigation
     public int AuthorId { get; set; }

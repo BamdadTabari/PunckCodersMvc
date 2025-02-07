@@ -24,7 +24,6 @@ public static class UserSeed
             SecurityStamp = StampGenerator.CreateSecurityStamp(Defaults.SecurityStampLength),
             LastPasswordChangeTime =  new DateTime(2025, 1, 1, 12, 0, 0),
             CreatedAt = new DateTime(2025, 1, 1, 12, 0, 0),
-            UpdatedAt = new DateTime(2025, 1, 1, 12, 0, 0),
             IsDeleted = false,
         }
     };

@@ -62,7 +62,6 @@ public class PostController : Controller
             var entity = new Post
             {
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
                 IsDeleted = false,
                 Title = createPostCommand.Title,
                 Content = createPostCommand.Content,

@@ -36,7 +36,6 @@ public class LikeController : Controller
             var entity = new PostLike
             {
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
                 IsDeleted = false,
                 UserId = (await _unitOfWork.UserRepo.GetUser(User.Identity.Name)).Id,
                 PostId = createLikeCommand.PostId,

@@ -11,7 +11,6 @@ public static class UserRoleSeed
             RoleId = 1,
             UserId = 1,
             CreatedAt =  new DateTime(2025, 1, 1, 12, 0, 0),
-            UpdatedAt = new DateTime(2025, 1, 1, 12, 0, 0),
             IsDeleted = false,
         }
     };

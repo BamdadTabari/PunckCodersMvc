@@ -40,7 +40,6 @@ public class PostCategoryController : Controller
             var entity = new PostCategory
             {
                 CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now,
                 IsDeleted = false,
                 Name = createPostCategoryCommand.Name,
             };
@@ -73,7 +72,6 @@ public class PostCategoryController : Controller
                 return BadRequest("PostCategory already exists");
 
             var entity = await _unitOfWork.PostCategoryRepo.GetByIdAsync(editPostCategoryCommand.PostCategoryId);
-            entity.UpdatedAt = DateTime.Now;
             entity.Name = editPostCategoryCommand.Name;
 
             _unitOfWork.PostCategoryRepo.Update(entity);

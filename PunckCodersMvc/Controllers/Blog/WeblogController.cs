@@ -2,6 +2,7 @@
 using DataProvider.EntityFramework.Entities.Blog;
 using DataProvider.EntityFramework.Repository;
 using DataProvider.Models.Query.Blog.PostCategory;
+using DataProvider.Models.Result.Blog.Post;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -81,7 +82,7 @@ public class WeblogController : Controller
         string cacheKey = $"{CacheKey}_{getPostQuery.PostId}";
         string lockKey = $"{CacheLockKey}_{getPostQuery.PostId}";
 
-        if (!_memoryCache.TryGetValue(cacheKey, out Post? result))
+        if (!_memoryCache.TryGetValue(cacheKey, out PostResult? result))
         {
             // Lock mechanism to prevent cache stampede
             if (!_memoryCache.TryGetValue(lockKey, out _))
@@ -89,10 +90,33 @@ public class WeblogController : Controller
                 try
                 {
                     _memoryCache.Set(lockKey, true, _cacheOptions.LockExpiration);
+                    var post = await _unitOfWork.PostRepo.GetByIdAsync(getPostQuery.PostId);
+                    if (post == null) return NotFound("Post not found.");
 
-                    result = await _unitOfWork.PostRepo.GetByIdAsync(getPostQuery.PostId);
+                    // Increment view count and update database
+                    result.ViewCount += 1;
+                    _unitOfWork.PostRepo.Update(post);
+                    await _unitOfWork.CommitAsync();
 
-                    if (result == null) return NotFound("Post not found.");
+
+                    var userLiked = await _unitOfWork.PostLikeRepo.
+                        Get(_unitOfWork.UserRepo.GetUser(User.Identity.Name).Id,
+                        getPostQuery.PostId);
+                    result = new PostResult()
+                    {
+                        PostCommentResults = post.PostComments.Select(x => new PostCommentResult()).ToList(),
+                        Id = post.Id,
+                        Content = post.Content,
+                        CreatedAt = post.CreatedAt,
+                        ViewCount = post.ViewCount,
+                        Author = post.Author.Username,
+                        Title = post.Title,
+                        ShortDescription = post.ShortDescription,
+                        Image = post.Image,
+                        PostCategoryId = post.PostCategoryId,
+                        PostCategoryName = post.PostCategory.Name,
+                        IsUserLiked = userLiked != null ? true : false
+                    };
 
                     _memoryCache.Set(cacheKey, result, new MemoryCacheEntryOptions
                     {
@@ -112,12 +136,6 @@ public class WeblogController : Controller
                 return await GetPost(getPostQuery);
             }
         }
-
-        // Increment view count and update database
-        result.ViewCount += 1;
-        _unitOfWork.PostRepo.Update(result);
-        await _unitOfWork.CommitAsync();
-
         return Ok(result);
     }
 
